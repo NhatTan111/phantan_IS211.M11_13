@@ -1,0 +1,101 @@
+1. Hàm in ra doanh số bán hàng trên toàn bộ hệ thống trong ngày
+Create or replace function DoanhSoNgay
+
+return number
+
+as
+
+retval number;
+
+begin
+
+SELECT SUM(ThanhTien) into retval
+
+FROM (
+
+SELECT ThanhTien FROM btl.HOADON where NgayBan = TRUNC(SYSDATE)
+
+UNION SELECT ThanhTien FROM BTL1.HOADON@BTL_LINK1 where NgayBan = TRUNC(SYSDATE));
+
+RETURN retval;
+
+end;
+
+** Chạy function**
+SELECT DoanhSoNgay FROM dual;
+
+2. Liệt kê những hóa đơn do nhân viên (Mã nhân viên nhập từ bàn phím) bán được trong ngày
+CREATE OR REPLACE PROCEDURE SelectEmployeeDataToday(manv IN varchar, details OUT SYS_REFCURSOR)
+IS
+cnt NUMBER;
+BEGIN
+SELECT COUNT(MANV) INTO cnt FROM btl.NHANVIEN WHERE MANV = manv;
+IF ( cnt = 0 )
+THEN
+OPEN details FOR
+SELECT * FROM btl.HOADON WHERE MANV= manv AND NgayBan = TRUNC(SYSDATE);
+ELSE
+OPEN details FOR
+SELECT * FROM BTL1.HOADON@BTL_LINK1 WHERE MANV=manv AND NgayBan = TRUNC(SYSDATE);
+END IF;
+END;
+
+** Chạy Procedure ** 
+variable rc refcursor;
+exec SelectEmployeeDataToday('NV01', :rc );
+print rc;
+
+
+
+3. Nhân viên in hoá đơn phải có chức vụ là NV bán hàng
+** Trigger 1**
+CREATE OR REPLACE TRIGGER trigger_hoadon_nv
+BEFORE INSERT OR UPDATE ON HOADON
+FOR EACH ROW
+DECLARE
+cnt number;
+BEGIN
+SELECT COUNT(MANV) INTO cnt FROM
+(SELECT MANV FROM NHANVIEN WHERE CHUCVU = 'NV Bán hàng' AND MANV = :NEW.MANV
+UNION
+SELECT MANV FROM BTL1.NHANVIEN@BTL_LINK1 WHERE CHUCVU = 'NV Bán hàng' AND MANV = :NEW.MANV);
+IF cnt = 0
+THEN
+raise_application_error(-20000
+, 'KHONG THEM DC');
+ROLLBACK;
+END IF;
+END;
+
+** Chạy trigger 1 **
+ INSERT INTO HOADON VALUES( 'HD002', '13/10/2021', '52000', 'KH13', 'NV03');
+
+
+
+** Trigger 2 **
+CREATE OR REPLACE TRIGGER trigger_nv_hd
+BEFORE UPDATE ON NHANVIEN
+FOR EACH ROW
+WHEN (OLD.CHUCVU = 'NV Bán hàng')
+DECLARE
+cnt number;
+BEGIN
+IF :OLD.CHUCVU != :NEW.CHUCVU
+THEN
+SELECT COUNT(MANV) INTO cnt FROM
+(SELECT MANV FROM btl.HOADON UNION SELECT MANV FROM BTL1.HOADON@BTL_LINK1);
+IF cnt != 0
+THEN
+:NEW.CHUCVU := 'NV Bán hàng';
+END IF;
+END IF;
+END;
+
+** Chạy trigger 2 **
+ UPDATE NHANVIEN
+ SET CHUCVU = 'GIAM DOC'
+ WHERE MANV = 'NV02';
+
+SELECT * FROM NHANVIEN;
+
+

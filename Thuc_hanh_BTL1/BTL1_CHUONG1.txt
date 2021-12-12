@@ -1,0 +1,41 @@
+1. Tìm hóa đơn chứa tất cả menu 
+
+SELECT *
+FROM (
+ 	SELECT * FROM btl.HOADON hd1
+	UNION
+	SELECT * FROM BTL1.HOADON@BTL_LINK1 hd2
+) hd 
+WHERE NOT EXISTS (
+	SELECT * 
+	FROM MENU m
+	WHERE NOT EXISTS (
+		SELECT * 
+		FROM (
+ 			SELECT * FROM btl.HOADON_MENU hdmn1
+			UNION
+			SELECT * FROM BTL1.HOADON_MENU @BTL_LINK1 hdmn2
+		) hm 
+		WHERE hm.MaHD=hd.MaHD and hm.MaMenu=m.MaMenu
+	)
+);
+
+3. Tìm menu được khách hàng mua ở hai chi nhánh
+SELECT m.MaMenu, LoaiBanhMi
+FROM btl.MENU m, btl.KHACHHANG kh, btl.HOADON hd, btl.HOADON_MENU hm
+WHERE m.MaMenu=hm.MaMenu and kh.MaKH=hd.MaKH and hd.MaHD=hm.MaHD
+INTERSECT
+SELECT m.MaMenu,LoaiBanhMi
+FROM BTL1.MENU@BTL_LINK1 m, BTL1.KHACHHANG@BTL_LINK1 kh, BTL1.HOADON@BTL_LINK1 hd, BTL1.HOADON_MENU@BTL_LINK1 hm
+WHERE m.MaMenu=hm.MaMenu and kh.MaKH=hd.MaKH and hd.MaHD=hm.MaHD;
+
+
+5. In ra danh sách các loại bánh mì (MaMenu,LoaiBanhMi) không bán được.
+SELECT mn.MaMenu,mn.LoaiBanhMi
+FROM Menu mn
+WHERE not exists ( SELECT hm.MaMenu FROM (SELECT * FROM btl. HOADON_MENU UNION SELECT * FROM btl. HOADON_MENU) hm WHERE mn.MaMenu=hm.MaMenu);
+
+9. Tính doanh thu bán hàng mỗi ngày.
+SELECT NgayBan, SUM(ThanhTien) DoanhThu
+FROM (SELECT * FROM btl.HOADON UNION SELECT * FROM btl.HOADON) hd
+GROUP BY NgayBan;
