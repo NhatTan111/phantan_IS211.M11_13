@@ -1,0 +1,268 @@
+////////////////////////////
+----------------------------
+	   READY
+----------------------------
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+---2 may cung chay---
+SET LINESIZE 100 PAGESIZE 50
+COLUMN MANV FORMAT A10
+COLUMN HOTEN FORMAT A20
+COLUMN CHUCVU FORMAT A20
+COLUMN NGAYLAMVIEC FORMAT A10
+
+////////////////////////////
+----------------------------
+	LOST UPDATE
+----------------------------
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = READ COMMITTED;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN; 
+*e
+update NHANVIEN
+SET CHUCVU = 'CHUC VU 3'
+WHERE MANV = 'NV01';
+*e
+
+---May 2---
+UPDATE BTL1.NHANVIEN@BTL_LINK1
+SET ChucVu='Chuc vu 2'
+WHERE MaNV='NV01';
+*e
+
+---May 1---
+COMMIT;
+*e
+
+---May 2---
+COMMIT;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN; 
+*e
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = SERIALIZABLE;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN; 
+*e
+
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu 1'
+WHERE MaNV='NV01';
+*e
+
+---May 2---
+UPDATE BTL1.NHANVIEN@BTL_LINK1
+SET ChucVu='Chuc vu 2'
+WHERE MaNV='NV01';
+*e
+
+---May 1---
+COMMIT;
+*e
+
+---May 2---
+//se bi cancel
+
+---May 1---
+SELECT * FROM NHANVIEN;
+*e
+
+////////////////////////////
+----------------------------
+       NON-REPEATABLE
+----------------------------
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = READ COMMITTED;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN;
+*e
+
+---May 2---
+UPDATE BTL1.NHANVIEN@BTL_LINK1
+SET ChucVu='Chuc vu x'
+WHERE MaNV='NV01';
+*e
+
+COMMIT;
+*e
+---May 1---
+SELECT * FROM NHANVIEN;
+*e
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = SERIALIZABLE;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN;
+*e
+
+---May 2---
+UPDATE BTL1.NHANVIEN@BTL_LINK1
+SET ChucVu='Chuc vu X'
+WHERE MaNV='NV01';
+*e
+
+COMMIT;
+*e
+
+---May 1---
+SELECT * FROM NHANVIEN;
+*e
+
+COMMIT;
+*e
+
+SELECT * FROM NHANVIEN;
+*e
+
+
+////////////////////////////
+----------------------------
+       PHANTOM READ
+----------------------------
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = READ COMMITTED;
+*e
+
+---May 1---
+SELECT COUNT(*) FROM NHANVIEN;
+*e
+
+---May 2---
+INSERT INTO BTL1.NHANVIEN@BTL_LINK1 VALUES( 'NV11', 'Văn Thanh', 'Giam Doc', '16/07/2015');
+*e
+
+COMMIT;
+*e
+
+---May 1---
+SELECT COUNT(*) FROM NHANVIEN;
+*e
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = SERIALIZABLE;
+*e
+
+---May 1---
+SELECT COUNT(*) FROM NHANVIEN;
+*e
+
+---May 2---
+INSERT INTO BTL1.NHANVIEN@BTL_LINK1 VALUES( 'NV12', 'Văn Thịnh', 'PGD', '19/07/2015');
+*e
+
+COMMIT;
+*e
+
+---May 1---
+SELECT COUNT(*) FROM NHANVIEN;
+*e
+
+COMMIT;
+*e
+
+SELECT COUNT(*) FROM NHANVIEN;
+*e
+
+////////////////////////////
+----------------------------
+	  DEADLOCK
+----------------------------
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = READ COMMITTED;
+*e
+
+---May 1---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu Z'
+WHERE MaNV='NV01';
+*e
+
+---May 2---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu y';
+WHERE MaNV='NV02';
+*e
+
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu x1';
+WHERE MaNV='NV01';
+*e
+
+---May 1---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu y1'
+WHERE MaNV='NV02';
+*e
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+
+---may khong hien thi thong bao deadlock tat sqlplus mo lai---
+UPDATE SET LINESIZE 100 PAGESIZE 50
+COLUMN MANV FORMAT A10
+COLUMN HOTEN FORMAT A20
+COLUMN CHUCVU FORMAT A20
+COLUMN NGAYLAMVIEC FORMAT A10
+
+---2 may cung chay---
+ALTER SESSION SET ISOLATION_LEVEL = SERIALIZABLE;
+*e
+
+---May 1---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu x'
+WHERE MaNV='NV01';
+*e
+
+---May 2---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu y'
+WHERE MaNV='NV02';
+*e
+
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu x1'
+WHERE MaNV='NV01;
+*e
+
+---May 1---
+UPDATE NHANVIEN
+SET ChucVu='Chuc vu y1'
+WHERE MaNV='NV02';
+*e
+
+---May hien thi thong bao deadlock---
+SELECT * FROM NHANVIEN;
+*e
+
+//hoac
+
+SELECT * FROM BTL1.NHANVIEN@BTL_LINK1;
+*e
