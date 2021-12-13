@@ -1,0 +1,51 @@
+set serveroutput off
+alter session set statistics_level = all
+set linesize 200 pagesize 200
+column Id format a10
+column Operation format a20
+column Name format a10
+column E-rows format a10
+column A-rows format a10
+column A-time format a10
+column Buffers format a10
+column OMem format a10
+column 1Mem format a10
+column Used-Mem format a10
+
+
+	** Truy vấn thường **
+
+SELECT /*+ GATHER_PLAN_STATISTICS */ nv.MaNV, kh.HoTen, ChucVu, nv.Hoten, ThanhTien
+FROM NHANVIEN nv, KHACHHANG kh, HOADON hd, HOADON_MENU hm
+WHERE nv.MaNV=hd.MaNV and kh.MaKH=hd.MaKH and hd.MaHD=hm.MaHD and MaMenu = 'M01' and SDT='1588517534';
+
+SELECT * From TABLE(DBMS_XPLAN.display_cursor(format=>'ALLSTATS LAST'));
+
+
+//////////////////////////////////////////////////
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+	** Truy vấn tối ưu **
+
+SELECT /*+ GATHER_PLAN_STATISTICS */ MaNV, TenNV, ChucVu, TenKH, ThanhTien
+FROM 
+(SELECT MaHD FROM HOADON_MENU WHERE MaMenu='M01') F
+JOIN
+(
+    SELECT MaNV, TenNV, ChucVu, MaHD, TenKH, ThanhTien
+    FROM
+	(SELECT MaKH, HoTen as TenKH FROM KHACHHANG WHERE SDT='1588517534') D
+	JOIN
+	    (SELECT A.MaNV, TenNV, ChucVu, MaKH, MaHD, ThanhTien
+	     FROM	
+		(SELECT MaNV, HoTen as TenNV, ChucVu FROM NHANVIEN) A 
+		JOIN 
+		(SELECT MaNV, MaKH, MaHD, ThanhTien FROM HOADON) B
+		ON A.MaNV=B.MaNV
+	    ) C
+	ON D.MaKH=C.MaKH
+)E
+ON F.MaHD=E.MaHD;
+
+SELECT * FROM TABLE(DBMS_XPLAN.display_cursor(format=>'ALLSTATS LAST'));
