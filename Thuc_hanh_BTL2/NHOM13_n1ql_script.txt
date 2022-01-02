@@ -1,0 +1,61 @@
+-------------bucket BANHMY1------------
+---------------------------------------
+INSERT INTO BANHMY1 (KEY, VALUE)
+VALUES 
+("DT001",
+{"maBM":"BM01",
+"tenBM":"BANH MY CHA LUA",
+"giaban":10000,
+"slton":1000})
+
+INSERT INTO BANHMY1 (KEY, VALUE)
+VALUES 
+("DT001",
+{"maBM":"BM02",
+"tenBM":"BANH MY CHA CA",
+"giaban":18000,
+"slton":600})
+
+-------------bucket BANHMY2------------
+---------------------------------------
+INSERT INTO BANHMY2 (KEY, VALUE)
+VALUES 
+("DT001",
+{"maBM":"BM01",
+"tenBM":"BANH MY CHA LUA",
+"giaban":10000,
+"slton":1000})
+
+INSERT INTO BANHMY2 (KEY, VALUE)
+VALUES 
+("DT003",
+{"maBM":"BM03",
+"tenBM":"BANH MY TRUNG",
+"giaban":8000,
+"slton":500})
+
+INSERT INTO BANHMY2 (KEY, VALUE)
+VALUES 
+("DT004",
+{"maBM":"BM04",
+"tenBM":"BANH MY THIT",
+"giaban":20000,
+"slton":800})
+
+-------------INDEXES-------------------
+---------------------------------------
+CREATE PRIMARY INDEX ON `default`:`BANHMY1`
+CREATE PRIMARY INDEX ON `default`:`BANHMY2`
+
+-------------Truy van phan tan-------------
+-------------------------------------------
+Remote link: BANHMYHANOI
+
+CREATE DATASET BANHMYmay2 ON `BANHMY2`
+AT BANHMYHANOI
+
+-------------query don gian---------------
+------------------------------------------
+SELECT *
+FROM BANHMY1 a, BANHMYmay2 b
+WHERE a.maBM=b.maBM
